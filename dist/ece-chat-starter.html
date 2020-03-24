@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>dCloud</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+
+  <!-- Vue.js -->
+  <script src="https://unpkg.com/vue"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container is-fluid">
+      <b-loading :active="loading"></b-loading>
+      <form ref="form" @submit.prevent="submit" style="max-width: 480px; margin: auto;">
+        <!-- <b-input type="text" placeholder="User ID" v-model="userId" autofocus /> -->
+        
+        <b-field label="Please enter your user ID to continue:" :message="fieldMessage" :type="fieldType">
+          <b-input
+          v-model="userId"
+          placeholder="1234"
+          required />
+        </b-field>
+  
+        <button class="button is-success" type="submit" :disabled="buttonDisabled">{{ loading ? 'Loading...' : 'Submit' }}</button>
+  
+      </form>
+    </div>
+  </div>
+
+  <!-- <script src="vue.js"></script> -->
+  <!-- Full buefy bundle -->
+  <!-- <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script> -->
+
+  <!-- Individual buefy components -->
+  <!-- <script src="https://unpkg.com/buefy/dist/components/table"></script> -->
+  <script src="https://unpkg.com/buefy/dist/components/field"></script>
+  <script src="https://unpkg.com/buefy/dist/components/input"></script>
+  <script src="https://unpkg.com/buefy/dist/components/loading"></script>
+  <script src="https://unpkg.com/buefy/dist/components/dialog"></script>
+  
+  <script>
+  var app = new Vue({
+    el: '#app',
+    data () {
+      return {
+        userId: '',
+        loading: false
+      }
+    },
+    computed: {
+      query () {
+        return new URLSearchParams(window.location.search)
+      },
+      datacenter () {
+        return this.query.get('datacenter')
+      },
+      session () {
+        return this.query.get('session')
+      },
+      buttonDisabled () {
+        // disable submit unless it is 4 numerical digits
+        return this.userId.length !== 4 || isNaN(parseInt(this.userId))
+      }
+    },
+    methods: {
+      async submit () {
+        // set loading state
+        this.loading = true
+        // ?session=744564&datacenter=RTP&userId=0325
+        // submit form - get the chat entry point ID and store in data
+        // this will trigger navigation
+        const qs = {
+          datacenter: this.datacenter,
+          session: this.session,
+          userId: this.userId
+        }
+        let url = new URL('https://mm.cxdemo.net/api/v1/sessions')
+        Object.keys(qs).forEach(key => url.searchParams.append(key, qs[key]))
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            // mode: 'same-origin',
+            mode: 'cors',
+            cache: 'no-cache',
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+          })
+          // parse response to json
+          const json = await response.json()
+          console.log('json', json)
+          this.loading = false
+          if (json.chatUrl) {
+            // success - navigate to chat URL
+            window.location = json.chatUrl
+          } else {
+            // error - pop alert
+            this.$buefy.dialog.alert({
+              title: 'Error',
+              message: `Invalid user ID for this demo. Please try again.`,
+              type: 'is-danger',
+              // hasIcon: true,
+              // icon: 'times-circle',
+              // iconPack: 'fa',
+              ariaRole: 'alertdialog',
+              ariaModal: true
+            })
+          }
+        } catch (e) {
+          // clear loading state
+          this.loading = false
+        }
+      }
+    }
+  })
+  </script>
+</body>
+</html>
