@@ -59,6 +59,18 @@
       session () {
         return this.query.get('session')
       },
+      name () {
+        return this.query.get('fieldname_1')
+      },
+      email () {
+        return this.query.get('fieldname_2')
+      },
+      phone () {
+        return this.query.get('fieldname_3')
+      },
+      subject () {
+        return this.query.get('fieldname_4')
+      },
       buttonDisabled () {
         // disable submit unless it is 4 numerical digits
         return this.userId.length !== 4 || isNaN(parseInt(this.userId))
@@ -92,8 +104,13 @@
           console.log('json', json)
           this.loading = false
           if (json.chatUrl) {
-            // success - navigate to chat URL
-            window.location = json.chatUrl
+            // success - append customer info and then navigate to chat URL
+            let chatUrl = json.chatUrl
+            chatUrl += `&fieldname_1=${this.name}`
+            chatUrl += `&fieldname_2=${this.email}`
+            chatUrl += `&fieldname_3=${this.phone}`
+            chatUrl += `&fieldname_4=${this.subject}`
+            window.location = chatUrl
           } else {
             // error - pop alert
             this.$buefy.dialog.alert({
